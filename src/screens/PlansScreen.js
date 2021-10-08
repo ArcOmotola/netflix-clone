@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectUser } from '../features/userSlice';
 import db from '../firebase';
 import './PlansScreen.css';
 import { loadStripe } from '@stripe/stripe-js';
+import { subscribed, unsubscribed, selectSubscriptionStatus } from '../features/subscriptionStatus';
 
 export default function PlansScreen() {
     const [products, setProducts] = useState([]);
     const user = useSelector(selectUser);
-    const [subscription, setSubscription] = useState(null);
+    const subscription = useSelector(selectSubscriptionStatus);
+    const dispatch = useDispatch();
 
     useEffect(() => {
         db.collection("customers")                                        //to get subscription details from firestore
@@ -17,14 +19,20 @@ export default function PlansScreen() {
         .get()
         .then(querySnapshot => {
             querySnapshot.forEach(async subscription => {
-                setSubscription({
-                    role: subscription.data().role,
-                    current_period_end: subscription.data().current_period_end.seconds,
-                    current_period_start: subscription.data().current_period_start.seconds,
-                })
+                if (subscription) {
+                    dispatch(
+                        subscribed({
+                            role: subscription.data().role,
+                            current_period_end: subscription.data().current_period_end.seconds,
+                            current_period_start: subscription.data().current_period_start.seconds,
+                        })
+                    )
+                } else {
+                    dispatch(unsubscribed());
+                }
             })
         })
-    }, [user.uid])
+    }, [user.uid, dispatch])
 
     useEffect(() => {
         db.collection("products")

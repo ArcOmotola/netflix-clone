@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
 import './App.css';
 import HomeScreen from './screens/HomeScreen';
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Switch, Route, Redirect } from 'react-router-dom';
 import LoginScreen from './screens/LoginScreen';
 import { auth } from './firebase';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, logout, selectUser } from './features/userSlice';
 import ProfileScreen from './screens/ProfileScreen';
+import { selectSubscriptionStatus } from './features/subscriptionStatus';
 
 function App() {
   const user = useSelector(selectUser);
+  const subscription = useSelector(selectSubscriptionStatus);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -36,12 +38,12 @@ function App() {
           <LoginScreen />
         ) : (
         <Switch>
-          <Route path="/profile">
-            <ProfileScreen />
-          </Route>
-          <Route path="/">
-            <HomeScreen />
-          </Route>
+            <Route exact path="/profile">
+              <ProfileScreen />
+            </Route>
+            <Route exact path="/">
+              {subscription ? <HomeScreen /> : <Redirect to="/profile" /> }
+            </Route>
         </Switch>
         )}
       </Router>
