@@ -3,17 +3,23 @@ import axios from './axios';  //renamed instance as axios because it was a defau
 import './Row.css';
 import YouTube from 'react-youtube';
 import movieTrailer from "movie-trailer";
+import SkeletonRow from './skeleton/skeletonRow';
+
 
 const base_url = "https://image.tmdb.org/t/p/original/";    //url for image poster
 
 export default function Row({ title, fetchUrl, isLargeRow }) {
     const [movies, setMovies] = useState([]);
     const [trailerUrl, setTrailerUrl] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        
         async function fetchData() {
+            setLoading(true);
             const response = await axios.get(fetchUrl);     //e.g https://api.themoviedb.org/3/{fetchUrl} 
             setMovies(response.data.results);
+            setLoading(false);
             return response;
         }
         fetchData();

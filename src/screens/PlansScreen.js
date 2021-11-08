@@ -5,14 +5,18 @@ import db from '../firebase';
 import './PlansScreen.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { subscribed, unsubscribed, selectSubscriptionStatus } from '../features/subscriptionStatus';
+import PlansSkeleton from '../skeleton/plansSkeleton';
+
 
 export default function PlansScreen() {
     const [products, setProducts] = useState([]);
     const user = useSelector(selectUser);
+    const [loading, setLoading] = useState(false);
     const subscription = useSelector(selectSubscriptionStatus);
     const dispatch = useDispatch();
 
     useEffect(() => {
+        setLoading(true);
         db.collection("customers")                                        //to get subscription details from firestore
         .doc(user.uid)
         .collection("subscriptions")
@@ -27,14 +31,16 @@ export default function PlansScreen() {
                             current_period_start: subscription.data().current_period_start.seconds,
                         })
                     )
+                    setLoading(false);
                 } else {
                     dispatch(unsubscribed());
                 }
             })
         })
-    }, [user.uid, dispatch])
+    }, [])
 
     useEffect(() => {
+        setLoading(true);
         db.collection("products")
         .where("active", "==", true)                                //to get products from firestore
         .get()
@@ -51,6 +57,7 @@ export default function PlansScreen() {
                 })
             });
             setProducts(products);
+            setLoading(false)
         })
     }, []);
 
@@ -90,25 +97,29 @@ export default function PlansScreen() {
     };
 
     return (
-        <div className="plansScreen">
-            <br />
-            {subscription && <p>Renewal date: {new Date(subscription?.current_period_end * 1000).toLocaleDateString()}</p>}
-            {Object.entries(products).map(([productId, productData]) => {
-               //add some logic to check if user's subscription is active
-                const isCurrentPackage = productData.name?.toLowerCase().includes(subscription?.role);
-
-                return (
-                    <div key={productId} className={`${isCurrentPackage && "plansScreen__plan--disabled"} plansScreen__plan`}>
-                        <div className="plansScreen__info">
-                            <h5>{productData.name}</h5>
-                            <h6>{productData.description}</h6>
+        <>
+        {loading && <PlansSkeleton />}
+        {!loading && (
+            <div className="plansScreen">
+                <br />
+                {subscription && <p>Renewal date: {new Date(subscription?.current_period_end * 1000).toLocaleDateString()}</p>}
+                {Object.entries(products).map(([productId, productData]) => {
+                   //add some logic to check if user's subscription is active
+                    const isCurrentPackage = productData.name?.toLowerCase().includes(subscription?.role);
+    
+                    return (
+                        <div key={productId} className={`${isCurrentPackage && "plansScreen__plan--disabled"} plansScreen__plan`}>
+                            <div className="plansScreen__info">
+                                <h5>{productData.name}</h5>
+                                <h6>{productData.description}</h6>
+                            </div>
+                            <button onClick={() => !isCurrentPackage && loadCheckout(productData.prices.priceId)}>
+                                {isCurrentPackage? "Current Package" : "Subscribe"}
+                            </button>
                         </div>
-                        <button onClick={() => !isCurrentPackage && loadCheckout(productData.prices.priceId)}>
-                            {isCurrentPackage? "Current Package" : "Subscribe"}
-                        </button>
-                    </div>
-                )
-            })}
-        </div>
+                    )
+                })}
+            </div>
+        )}</>
     )
 }

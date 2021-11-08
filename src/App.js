@@ -38,12 +38,13 @@ function App() {
           <LoginScreen />
         ) : (
         <Switch>
-            <Route exact path="/profile">
+          <Route exact path="/profile">
               <ProfileScreen />
             </Route>
             <Route exact path="/">
               {subscription ? <HomeScreen /> : <Redirect to="/profile" /> }
             </Route>
+            
         </Switch>
         )}
       </Router>
